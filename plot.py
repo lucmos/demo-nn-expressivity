@@ -1,6 +1,8 @@
-from typing import Optional, Callable
-import torch
+from typing import Callable, Optional
+
 import plotly.graph_objects as go
+import torch
+
 
 def plot_landscape(
     fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
@@ -12,11 +14,11 @@ def plot_landscape(
     autoshow: bool = False,
     **kwargs
 ) -> go.Figure:
-    """ Plot the landscape defined by the function `fn`.
+    """Plot the landscape defined by the function `fn`.
 
-  Creates a domain grid $x,y \in R^2$ with $x \in [-lim, lim]$ and
-  $y \in [-lim, lim]. The number of points in this grid is resolution**2.
-  """
+    Creates a domain grid $x,y \in R^2$ with $x \in [-lim, lim]$ and
+    $y \in [-lim, lim]. The number of points in this grid is resolution**2.
+    """
     xx = torch.linspace(-lim, lim, resolution)
     yy = torch.linspace(-lim, lim, resolution)
 
@@ -29,9 +31,18 @@ def plot_landscape(
     yy = yy.cpu().detach()
     zz = zz.cpu().detach()
 
-    fig = go.Figure(data=[go.Surface(z=zz, x=xx, y=yy, opacity=landscape_opacity,
-                                     cmid=0,
-                                     colorscale='Viridis')])
+    fig = go.Figure(
+        data=[
+            go.Surface(
+                z=zz,
+                x=xx,
+                y=yy,
+                opacity=landscape_opacity,
+                cmid=0,
+                colorscale="Viridis",
+            ),
+        ],
+    )
     fig.update_traces(
         contours_z=dict(
             show=True, usecolormap=True, highlightcolor="lightgray", project_z=True
@@ -42,7 +53,7 @@ def plot_landscape(
     )
 
     if autoshow:
-      fig.show()
+        fig.show()
     return fig
 
 
@@ -56,7 +67,7 @@ def plot_points_over_landscape(
     title: Optional[str] = None,
     autoshow: bool = False,
 ) -> go.Figure:
-    """ Plot a point over the landascape defined by the cunction `fn`
+    """Plot a point over the landascape defined by the cunction `fn`
 
     :param fn: an universal function $R^2 -> R$
     :param points: tensor of shape [..., 3]
@@ -72,7 +83,7 @@ def plot_points_over_landscape(
         lim=lim,
         height=height,
         landscape_opacity=landscape_opacity,
-        title=title
+        title=title,
     )
 
     # Create starting path
@@ -81,17 +92,22 @@ def plot_points_over_landscape(
     z_points = points[..., 2]
 
     for point in points:
-      fig.add_trace(
-          go.Scatter3d(
-              visible=True,
-              showlegend=False,
-              mode="markers",
-              marker=dict(size=6, color="darkred", symbol="circle"),
-              x=x_points,
-              y=y_points,
-              z=z_points,
-          )
-      )
+        fig.add_trace(
+            go.Scatter3d(
+                visible=True,
+                showlegend=False,
+                mode="markers",
+                marker=dict(
+                    size=6,
+                    color="black",
+                    symbol="circle",
+                    # opacity=0.7,
+                ),
+                x=x_points,
+                y=y_points,
+                z=z_points,
+            )
+        )
 
     if autoshow:
         fig.show()

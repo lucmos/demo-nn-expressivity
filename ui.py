@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 from typing import Callable, Dict, Mapping, Optional, Union
 
 import numpy as np
@@ -13,11 +14,74 @@ from torch import nn as nn
 from torch.utils.data import DataLoader
 
 from functions import peaks, rastrigin, rosenbrock, simple_fn, simple_fn2
-from learning import *
 from plot import plot_points_over_landscape
 
 st.set_page_config(layout="centered")
 torch.manual_seed(0)
+
+st.sidebar.header("Visualization")
+plot_height = st.sidebar.slider(
+    "Plot height:", min_value=100, max_value=1000, value=700, step=50
+)
+show_code = st.sidebar.checkbox("Show MLP code")
+
+
+class PointsDataset(torch.utils.data.Dataset):
+    def __init__(self, x: torch.Tensor, y_true: torch.Tensor) -> None:
+        super().__init__()
+
+        self.x = x
+        self.y_true = y_true
+
+    def __len__(self) -> int:
+        return self.y_true.shape[0]
+
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        return {  # For the idx-th sample
+            "x": self.x[
+                idx, ...
+            ],  # the "x" are the (x, y) coordinates of the idx-th point
+            "y": self.y_true[idx],  # the "y" is  the (z) coordinate of the idx-th point
+        }
+
+
+with st.echo() if show_code else contextlib.nullcontext():
+
+    class MLP2D(nn.Module):
+        def __init__(
+            self,
+            num_layers: int,
+            hidden_dim: int,
+            activation: Callable[[torch.Tensor], torch.Tensor],
+        ) -> None:
+            super().__init__()
+
+            self.first_layer = nn.Linear(in_features=2, out_features=hidden_dim)
+
+            self.layers = nn.ModuleList()
+            for _ in range(num_layers):
+                self.layers.append(
+                    nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+                )
+            self.activation = activation
+
+            self.last_layer = nn.Linear(in_features=hidden_dim, out_features=1)
+
+        def forward(self, meshgrid: torch.Tensor) -> torch.Tensor:
+            """
+            Applies the MLP to each (x, y) independently
+
+            :param meshgrid: tensor of dimensions [..., 2]
+            :returns: tensor of dimension [..., 1]
+            """
+            out = meshgrid
+
+            out = self.first_layer(out)
+            for layer in self.layers:
+                out = self.activation(layer(out))
+            out = self.last_layer(out)
+
+            return out.squeeze(-1)
 
 
 @st.cache(allow_output_mutation=True)
@@ -50,11 +114,6 @@ fn_names = {
     "simple_fn2": simple_fn2,
 }
 
-st.sidebar.header("Visualization")
-plot_height = st.sidebar.slider(
-    "Plot height:", min_value=100, max_value=1000, value=700, step=50
-)
-show_data = st.sidebar.checkbox("Show sampled points", value=True)
 
 st.sidebar.header("Dataset creation")
 base_fn = st.sidebar.selectbox("Select unknown function:", list(fn_names.keys()))
@@ -69,13 +128,11 @@ lim = st.sidebar.slider("Domain limits:", min_value=0, max_value=50, value=3, st
 
 points_dl, points = get_dataloader(lim, fn, n_rand)
 
-if show_data:
-
-    st.subheader("Sampled points")
-    st.plotly_chart(
-        plot_points_over_landscape(fn, points, lim=lim, height=plot_height),
-        use_container_width=True,
-    )
+st.subheader("Sampled points")
+st.plotly_chart(
+    plot_points_over_landscape(fn, points, lim=lim, height=plot_height),
+    use_container_width=True,
+)
 
 
 activation_names = {
@@ -84,20 +141,21 @@ activation_names = {
     "elu": torch.nn.functional.elu,
     "sigmoid": torch.sigmoid,
     "tanh": torch.tanh,
+    "identity": lambda x: x,
 }
 
-st.sidebar.header("Model Hyperparameters")
+st.sidebar.header("Hyperparameters")
 num_layers = st.sidebar.slider(
-    "Number of hidden layers:", min_value=0, max_value=20, value=2
+    "Number of hidden layers:", min_value=1, max_value=30, value=2
 )
 
 activation_fn = st.sidebar.selectbox(
-    "Select activation function:", ["relu", "leaky_relu", "elu", "sigmoid", "tanh"]
+    "Select activation function:", list(activation_names.keys())
 )
 activation_fn = activation_names[activation_fn]
 
 hidden_dim = st.sidebar.slider(
-    "Hidden dimensionality:", min_value=0, max_value=512, value=16
+    "Hidden dimensionality:", min_value=1, max_value=512, value=16
 )
 
 num_epochs = st.sidebar.slider(
@@ -132,7 +190,8 @@ for i in range(num_epochs):
         opt.step()
         opt.zero_grad()
 
-st.subheader("Fitted function")
+
+st.subheader("Learned function")
 
 st.plotly_chart(
     plot_points_over_landscape(model.cpu(), points.cpu(), lim=lim, height=plot_height),
