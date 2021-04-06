@@ -149,18 +149,15 @@ num_layers = st.sidebar.slider(
     "Number of hidden layers:", min_value=1, max_value=30, value=2
 )
 
+hidden_dim = st.sidebar.slider(
+    "Hidden dimensionality:", min_value=1, max_value=512, value=16
+)
+
 activation_fn = st.sidebar.selectbox(
     "Select activation function:", list(activation_names.keys())
 )
 activation_fn = activation_names[activation_fn]
 
-hidden_dim = st.sidebar.slider(
-    "Hidden dimensionality:", min_value=1, max_value=512, value=16
-)
-
-num_epochs = st.sidebar.slider(
-    "Number of epochs:", min_value=0, max_value=1000, value=100, step=10
-)
 learning_rate = st.sidebar.number_input(
     "Select learning rate",
     min_value=0.0,
@@ -168,6 +165,10 @@ learning_rate = st.sidebar.number_input(
     value=0.01,
     step=0.00001,
     format="%.5f",
+)
+
+num_epochs = st.sidebar.slider(
+    "Number of epochs:", min_value=0, max_value=1000, value=100, step=10
 )
 
 
