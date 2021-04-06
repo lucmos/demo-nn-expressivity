@@ -9,14 +9,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from functions import peaks, rastrigin, rosenbrock, simple_fn, simple_fn2
-from learning import *
-from plot import plot_points_over_landscape
-from stqdm import stqdm as tqdm
 from torch import nn as nn
 from torch.utils.data import DataLoader
 
-st.set_page_config(layout="wide")
+from functions import peaks, rastrigin, rosenbrock, simple_fn, simple_fn2
+from learning import *
+from plot import plot_points_over_landscape
+
+st.set_page_config(layout="centered")
 torch.manual_seed(0)
 
 
@@ -54,6 +54,7 @@ st.sidebar.header("Visualization")
 plot_height = st.sidebar.slider(
     "Plot height:", min_value=100, max_value=1000, value=700, step=50
 )
+show_data = st.sidebar.checkbox("Show sampled points", value=True)
 
 st.sidebar.header("Dataset creation")
 base_fn = st.sidebar.selectbox("Select unknown function:", list(fn_names.keys()))
@@ -68,11 +69,13 @@ lim = st.sidebar.slider("Domain limits:", min_value=0, max_value=50, value=3, st
 
 points_dl, points = get_dataloader(lim, fn, n_rand)
 
-st.subheader("Sampled points")
-st.plotly_chart(
-    plot_points_over_landscape(fn, points, lim=lim, height=plot_height),
-    use_container_width=True,
-)
+if show_data:
+
+    st.subheader("Sampled points")
+    st.plotly_chart(
+        plot_points_over_landscape(fn, points, lim=lim, height=plot_height),
+        use_container_width=True,
+    )
 
 
 activation_names = {
@@ -117,7 +120,7 @@ def energy(y_pred, y_true):
 model = MLP2D(num_layers=num_layers, activation=activation_fn, hidden_dim=hidden_dim)
 opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-for i in tqdm(range(num_epochs), desc="epoch"):
+for i in range(num_epochs):
     for batch in points_dl:
         x = batch["x"]
         y = batch["y"]
