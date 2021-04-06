@@ -158,6 +158,10 @@ activation_fn = st.sidebar.selectbox(
 )
 activation_fn = activation_names[activation_fn]
 
+num_epochs = st.sidebar.slider(
+    "Number of epochs:", min_value=0, max_value=1000, value=100, step=10
+)
+
 learning_rate = st.sidebar.number_input(
     "Select learning rate",
     min_value=0.0,
@@ -165,10 +169,6 @@ learning_rate = st.sidebar.number_input(
     value=0.01,
     step=0.00001,
     format="%.5f",
-)
-
-num_epochs = st.sidebar.slider(
-    "Number of epochs:", min_value=0, max_value=1000, value=100, step=10
 )
 
 
