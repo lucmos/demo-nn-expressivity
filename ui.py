@@ -80,7 +80,6 @@ with st.echo() if show_code else contextlib.nullcontext():
             for layer in self.layers:
                 out = self.activation(layer(out))
             out = self.last_layer(out)
-
             return out.squeeze(-1)
 
 
@@ -142,6 +141,10 @@ activation_names = {
     "sigmoid": torch.sigmoid,
     "tanh": torch.tanh,
     "identity": lambda x: x,
+    "cos": torch.cos,
+    "sin": torch.sin,
+    "abs": torch.abs,
+    "clamped01": lambda x: x.clamp(min=0, max=1),
 }
 
 st.sidebar.header("Hyperparameters")
