@@ -83,7 +83,7 @@ with st.echo() if show_code else contextlib.nullcontext():
             return out.squeeze(-1)
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, ttl=60)
 def get_dataloader(
     lim: int,
     fn: Callable,
